@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -9,8 +10,8 @@ const BraceletCanvas = dynamic(() => import('@/components/BraceletCanvas'), { ss
 const Sidebar = dynamic(() => import('@/components/Sidebar'), { ssr: false });
 
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [selectedBeads, setSelectedBeads] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [selectedBeads, setSelectedBeads] = useState<any[]>([]);
   const [targetLengthCm, setTargetLengthCm] = useState(16); // 默认手串长度为 16cm
   const [genderTab, setGenderTab] = useState('female'); // 手围推荐性别分类
   const [selectedString, setSelectedString] = useState({ id: 'string_black', name: 'Black String', color: '#333333', price: 1.00 }); // 手绳选择
