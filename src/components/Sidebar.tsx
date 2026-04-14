@@ -37,7 +37,7 @@ export default function Sidebar({ products, onAddBead, onClear, onCompleteDesign
   return (
     <div className="flex flex-col h-full bg-white">
       {/* 父分类 */}
-      <div className="flex overflow-x-auto border-b border-gray-100 bg-gray-50 hide-scrollbar">
+      <div className="flex overflow-x-auto border-b border-gray-100 bg-gray-50 custom-scrollbar shrink-0">
         {parents.map(p => (
           <button
             key={p}
@@ -52,12 +52,12 @@ export default function Sidebar({ products, onAddBead, onClear, onCompleteDesign
       </div>
 
       {/* 子分类 */}
-      <div className="flex flex-wrap gap-2 p-3 border-b border-gray-100">
+      <div className="flex overflow-x-auto gap-2 p-3 border-b border-gray-100 custom-scrollbar shrink-0">
         {subs.map(s => (
           <button
             key={s}
             onClick={() => setSubCat(s)}
-            className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+            className={`px-3 py-1.5 text-xs rounded-full border transition-colors whitespace-nowrap shrink-0 ${
               subCat === s ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
             }`}
           >

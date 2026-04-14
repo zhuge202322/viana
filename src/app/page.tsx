@@ -333,7 +333,7 @@ export default function Home() {
         </div>
 
         {/* 商品选择区域 */}
-        <div className={`flex-1 overflow-hidden xl:block ${mobileTab === 'products' ? 'block' : 'hidden'}`}>
+        <div className={`flex-1 flex flex-col overflow-hidden xl:block ${mobileTab === 'products' ? 'block' : 'hidden'}`}>
           <Sidebar products={products} onAddBead={addBead} onClear={clearBeads} onCompleteDesign={handleCompleteDesign} />
         </div>
       </div>
