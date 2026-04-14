@@ -11,7 +11,7 @@ const corsProxy = "https://images.weserv.nl/?url=";
 
 // 单个图片组件：混合渲染模式
 // 引入 react-spring/three 以实现丝滑的动画过渡
-const BeadPlane = ({ bead, position, rotation, isDragged, currentDragPos, onPointerDown, onPointerMove, onPointerUp }) => {
+const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentDragPos, onPointerDown, onPointerMove, onPointerUp }) => {
   const filename = bead.image ? bead.image.split('/').pop() : '';
   const textureUrl = filename ? `/images/beads/${filename}` : '';
   const texture = useTexture(textureUrl || '/images/beads/default.png');
@@ -41,14 +41,16 @@ const BeadPlane = ({ bead, position, rotation, isDragged, currentDragPos, onPoin
   useFrame(({ camera }) => {
     if (!groupRef.current || isRoundBead) return;
     
-    // 注意：动画状态下 position 变成了 AnimatedValue，不能直接用数组索引获取，
-    // 需要用 get() 方法，或者直接用 groupRef 的当前世界坐标。
-    // 为了性能，我们直接使用 groupRef 的父级坐标（因为它是直接跟 springPos 绑定的）
-    const dx = camera.position.x - groupRef.current.parent.position.x;
-    const dy = camera.position.y - groupRef.current.parent.position.y;
-    const dz = camera.position.z - groupRef.current.parent.position.z;
+    // 注意：获取当前在世界坐标系下的真实位置
+    const worldPos = new THREE.Vector3();
+    groupRef.current.parent.getWorldPosition(worldPos);
     
-    const rotZ = rotation[2] + (isPendant ? Math.PI : 0);
+    const dx = camera.position.x - worldPos.x;
+    const dy = camera.position.y - worldPos.y;
+    const dz = camera.position.z - worldPos.z;
+    
+    // 加上表盘整体旋转的角度
+    const rotZ = rotation[2] + (isPendant ? Math.PI : 0) + dialRotation;
     const localY = -dx * Math.sin(rotZ) + dy * Math.cos(rotZ);
     const localZ = dz;
     
@@ -104,7 +106,7 @@ const BeadPlane = ({ bead, position, rotation, isDragged, currentDragPos, onPoin
 };
 
 // 辅助组件：用于接收外部指令重置摄像机位置
-const ResetCamera = ({ trigger, controlsRef }) => {
+const ResetCamera = ({ trigger, controlsRef, setDialRotation }) => {
   const { camera } = useThree();
   useEffect(() => {
     if (trigger > 0) {
@@ -119,8 +121,27 @@ const ResetCamera = ({ trigger, controlsRef }) => {
         controlsRef.current.target.set(0, 0, 0);
         controlsRef.current.update();
       }
+      if (setDialRotation) {
+        setDialRotation(0);
+      }
     }
-  }, [trigger, camera, controlsRef]);
+  }, [trigger, camera, controlsRef, setDialRotation]);
+  return null;
+};
+
+// 辅助组件：如果含有配饰，强制拉回正脸视角
+const CameraLocker = ({ hasAccessories, controlsRef }) => {
+  const { camera } = useThree();
+  useEffect(() => {
+    if (hasAccessories) {
+      camera.position.set(0, 0, 10);
+      camera.lookAt(0, 0, 0);
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0);
+        controlsRef.current.update();
+      }
+    }
+  }, [hasAccessories, camera, controlsRef]);
   return null;
 };
 
@@ -131,6 +152,51 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
   const [currentDragPos, setCurrentDragPos] = useState(null); // 记录鼠标拖拽的实时 3D 坐标
   const dragStartPos = useRef({ x: 0, y: 0 });
   const controlsRef = useRef();
+
+  const hasAccessories = useMemo(() => {
+    return localBeads.some(b => {
+      const isRound = b.parentCategoryName === 'Beads' || b.categoryName?.includes('Bead');
+      return !isRound;
+    });
+  }, [localBeads]);
+
+  const [dialRotation, setDialRotation] = useState(0);
+  const isDialDragging = useRef(false);
+  const lastDialAngle = useRef(0);
+
+  const getLocalPoint = (point) => {
+    const x = point.x * Math.cos(-dialRotation) - point.y * Math.sin(-dialRotation);
+    const y = point.x * Math.sin(-dialRotation) + point.y * Math.cos(-dialRotation);
+    return { x, y };
+  };
+
+  const handleBgPointerDown = (e) => {
+    if (!hasAccessories) return;
+    e.stopPropagation();
+    e.target.setPointerCapture(e.pointerId);
+    isDialDragging.current = true;
+    lastDialAngle.current = Math.atan2(e.point.y, e.point.x);
+  };
+
+  const handleBgPointerMove = (e) => {
+    if (!isDialDragging.current || !hasAccessories) return;
+    e.stopPropagation();
+    const currentAngle = Math.atan2(e.point.y, e.point.x);
+    let delta = currentAngle - lastDialAngle.current;
+    if (delta > Math.PI) delta -= Math.PI * 2;
+    if (delta < -Math.PI) delta += Math.PI * 2;
+    setDialRotation(prev => prev + delta);
+    lastDialAngle.current = currentAngle;
+  };
+
+  const handleBgPointerUp = (e) => {
+    if (!hasAccessories) return;
+    e.stopPropagation();
+    if (e.target.hasPointerCapture(e.pointerId)) {
+      e.target.releasePointerCapture(e.pointerId);
+    }
+    isDialDragging.current = false;
+  };
 
   // 当外部的珠子列表变化时（比如添加了新珠子、删除了珠子），同步更新本地状态
   useEffect(() => {
@@ -230,6 +296,7 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
   const handlePointerMove = (e) => {
     const currentDragIndex = draggedIndexRef.current;
     if (currentDragIndex === null) return;
+    
     e.stopPropagation();
     
     // 将鼠标的屏幕坐标 (NDC) 反投影到 Z=0 的 3D 平面上，获得真实的 3D 世界坐标
@@ -239,11 +306,12 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
     const distance = -e.camera.position.z / dir.z;
     const pos = e.camera.position.clone().add(dir.multiplyScalar(distance));
     
-    // 实时更新鼠标所在的 3D 坐标，让珠子平滑跟随
-    setCurrentDragPos([pos.x, pos.y, 0]);
+    // 转换为表盘本地坐标系
+    const localPoint = getLocalPoint(pos);
+    setCurrentDragPos([localPoint.x, localPoint.y, 0]);
     
     // 计算鼠标当前在手串圆盘上的角度
-    const mouseAngle = Math.atan2(pos.y, pos.x);
+    const mouseAngle = Math.atan2(localPoint.y, localPoint.x);
     
     // 找到距离鼠标角度最近的那个珠子位置
     let closestIdx = currentDragIndex;
@@ -305,38 +373,57 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
       camera={{ position: [0, 0, 10], fov: 45 }}
       gl={{ preserveDrawingBuffer: true }} // 允许通过 toDataURL 提取图片
     >
-      <ResetCamera trigger={resetCamTrigger} controlsRef={controlsRef} />
+      <ResetCamera trigger={resetCamTrigger} controlsRef={controlsRef} setDialRotation={setDialRotation} />
+      <CameraLocker hasAccessories={hasAccessories} controlsRef={controlsRef} />
       <OrbitControls 
         ref={controlsRef}
         enablePan={false}
         enableZoom={true}
+        enableRotate={!hasAccessories}
         // 默认的 OrbitControls 不允许 Roll (Z轴/顺时针逆时针) 旋转
-        // 用户现在只能进行上下翻转和左右翻转
+        // 如果没有配饰，用户可以自由翻转；如果有配饰，则锁定摄像机，通过下方的平面进行 2D 转盘旋转
       />
       
       <ambientLight intensity={1} />
 
-      {ringData.curvePoints.length > 0 && (
-        <Line 
-          points={ringData.curvePoints}
-          color={stringColor}
-          lineWidth={2}
-        />
+      {/* 隐藏的背景板：用于在锁定 3D 旋转时，捕获鼠标拖拽来实现 2D 转盘旋转 */}
+      {hasAccessories && (
+        <mesh 
+          position={[0, 0, -5]} 
+          onPointerDown={handleBgPointerDown}
+          onPointerMove={handleBgPointerMove}
+          onPointerUp={handleBgPointerUp}
+          onPointerCancel={handleBgPointerUp}
+        >
+          <planeGeometry args={[100, 100]} />
+          <meshBasicMaterial visible={false} />
+        </mesh>
       )}
 
-      {localBeads.map((bead, idx) => (
-        <React.Suspense fallback={null} key={bead.uniqueId}>
-          <BeadPlane 
-            bead={bead} 
-            position={ringData.positions[idx]} 
-            rotation={ringData.rotations[idx]}
-            isDragged={draggedIndexState === idx}
-            onPointerDown={(e) => handlePointerDown(e, idx)}
-            onPointerMove={handlePointerMove}
-            onPointerUp={(e) => handlePointerUp(e, idx)}
+      <group rotation={[0, 0, dialRotation]}>
+        {ringData.curvePoints.length > 0 && (
+          <Line 
+            points={ringData.curvePoints}
+            color={stringColor}
+            lineWidth={2}
           />
-        </React.Suspense>
-      ))}
+        )}
+
+        {localBeads.map((bead, idx) => (
+          <React.Suspense fallback={null} key={bead.uniqueId}>
+            <BeadPlane 
+              bead={bead} 
+              position={ringData.positions[idx]} 
+              rotation={ringData.rotations[idx]}
+              dialRotation={dialRotation}
+              isDragged={draggedIndexState === idx}
+              onPointerDown={(e) => handlePointerDown(e, idx)}
+              onPointerMove={handlePointerMove}
+              onPointerUp={(e) => handlePointerUp(e, idx)}
+            />
+          </React.Suspense>
+        ))}
+      </group>
     </Canvas>
   );
 }
