@@ -406,6 +406,7 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
             points={ringData.curvePoints}
             color={stringColor}
             lineWidth={2}
+            position={[0, 0, -0.1]} // 将线圈稍微往后退一点，确保被配饰遮挡
           />
         )}
 
