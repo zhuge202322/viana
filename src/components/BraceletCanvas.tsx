@@ -169,6 +169,42 @@ const CameraLocker = ({ hasAccessories, controlsRef }) => {
   return null;
 };
 
+// 辅助组件：八卦图背景（仅在 2D 转盘模式下显示，且在旋转时变亮）
+const BaguaImage = ({ radius, isDragging }) => {
+  const [texture, setTexture] = useState(null);
+  
+  useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    loader.load('/bagua.png', (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 16;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.generateMipmaps = true;
+      setTexture(tex);
+    }, undefined, (err) => console.warn('Bagua texture missing', err));
+  }, []);
+
+  const { opacity } = useSpring({
+    opacity: isDragging ? 0.35 : 0.08, // 拖拽时稍微清晰，平时若隐若现
+    config: { tension: 150, friction: 20 }
+  });
+
+  if (!texture) return null;
+
+  return (
+    <a.mesh position={[0, 0, -0.2]} renderOrder={-1}>
+      <planeGeometry args={[radius * 1.6, radius * 1.6]} />
+      <a.meshBasicMaterial 
+        map={texture} 
+        transparent={true} 
+        opacity={opacity} 
+        depthWrite={false} 
+      />
+    </a.mesh>
+  );
+};
+
 export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, resetCamTrigger, stringColor = "#333333" }) {
   const [localBeads, setLocalBeads] = useState(beads);
   const draggedIndexRef = useRef(null);
@@ -185,6 +221,7 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
   }, [localBeads]);
 
   const [dialRotation, setDialRotation] = useState(0);
+  const [isDraggingDial, setIsDraggingDial] = useState(false);
   const isDialDragging = useRef(false);
   const lastDialAngle = useRef(0);
 
@@ -199,6 +236,7 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
     e.stopPropagation();
     e.target.setPointerCapture(e.pointerId);
     isDialDragging.current = true;
+    setIsDraggingDial(true);
     lastDialAngle.current = Math.atan2(e.point.y, e.point.x);
   };
 
@@ -220,6 +258,7 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
       e.target.releasePointerCapture(e.pointerId);
     }
     isDialDragging.current = false;
+    setIsDraggingDial(false);
   };
 
   // 当外部的珠子列表变化时（比如添加了新珠子、删除了珠子），同步更新本地状态
@@ -298,7 +337,7 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
       curvePoints.push(new THREE.Vector3(Math.cos(a) * R, Math.sin(a) * R, 0));
     }
 
-    return { positions, rotations, curvePoints, centerAngles };
+    return { positions, rotations, curvePoints, centerAngles, radius: R };
   }, [localBeads]);
 
   const handlePointerDown = (e, idx) => {
@@ -432,6 +471,10 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
       )}
 
       <group rotation={[0, 0, dialRotation]}>
+        {hasAccessories && (
+          <BaguaImage radius={ringData.radius || 2.54} isDragging={isDraggingDial} />
+        )}
+        
         {ringData.curvePoints.length > 0 && (
           <Line 
             points={ringData.curvePoints}
