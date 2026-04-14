@@ -3,7 +3,7 @@
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useTexture, Line, OrbitControls } from '@react-three/drei';
+import { useTexture, Line, OrbitControls, Environment, ContactShadows, SpotLight } from '@react-three/drei';
 import { useSpring, a } from '@react-spring/three';
 import * as THREE from 'three';
 
@@ -17,7 +17,17 @@ const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentD
   const texture = useTexture(textureUrl || '/images/beads/default.png');
   
   // 必须设置正确的颜色空间，否则图片颜色会发灰
-  texture.colorSpace = THREE.SRGBColorSpace;
+  useEffect(() => {
+    if (texture) {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      // 开启各向异性过滤和抗锯齿，大幅提升图片在 3D 渲染中的清晰度
+      texture.anisotropy = 16;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = true;
+      texture.needsUpdate = true;
+    }
+  }, [texture]);
   
   const sizeMm = parseFloat(bead.size || 10);
   const r = (sizeMm * 0.1) / 2;
@@ -91,12 +101,15 @@ const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentD
             position={isPendant ? [0, -r * 1.0, 0] : [0, 0, 0]}
           >
             <planeGeometry args={[r * 2.2, r * 2.2]} />
-            <meshBasicMaterial 
+            <meshStandardMaterial 
               map={texture} 
               transparent={true} 
               alphaTest={0.05}
               side={THREE.DoubleSide} 
               depthWrite={!isDragged}
+              roughness={0.2}
+              metalness={0.4}
+              envMapIntensity={1.5}
             />
           </mesh>
         )}
@@ -384,7 +397,29 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
         // 如果没有配饰，用户可以自由翻转；如果有配饰，则锁定摄像机，通过下方的平面进行 2D 转盘旋转
       />
       
-      <ambientLight intensity={1} />
+      {/* 珠宝展示灯光系统 */}
+      <ambientLight intensity={0.6} color="#ffffff" />
+      <directionalLight position={[5, 10, 5]} intensity={0.8} color="#fffaf0" />
+      <SpotLight 
+        position={[-5, 5, 10]} 
+        angle={0.3} 
+        penumbra={0.8} 
+        intensity={1.2} 
+        color="#ffffff"
+        castShadow 
+      />
+      
+      {/* 环境光反射，让珠子和配件更有质感 */}
+      <Environment preset="city" />
+
+      {/* 底部增加接触阴影，让整个手串显得更立体、更高级 */}
+      <ContactShadows 
+        position={[0, 0, -1]} 
+        opacity={0.4} 
+        scale={20} 
+        blur={2} 
+        far={10} 
+      />
 
       {/* 隐藏的背景板：用于在锁定 3D 旋转时，捕获鼠标拖拽来实现 2D 转盘旋转 */}
       {hasAccessories && (
