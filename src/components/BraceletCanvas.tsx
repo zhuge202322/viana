@@ -13,21 +13,26 @@ const corsProxy = "https://images.weserv.nl/?url=";
 // 引入 react-spring/three 以实现丝滑的动画过渡
 const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentDragPos, onPointerDown, onPointerMove, onPointerUp }) => {
   const filename = bead.image ? bead.image.split('/').pop() : '';
-  const textureUrl = filename ? `/images/beads/${filename}` : '';
-  const texture = useTexture(textureUrl || '/images/beads/default.png');
+  // 修正一些 URL 参数导致的错误
+  const cleanFilename = filename.split('?')[0];
+  const textureUrl = cleanFilename ? `/images/beads/${cleanFilename}` : '/images/beads/default.png';
   
-  // 必须设置正确的颜色空间，否则图片颜色会发灰
+  const [texture, setTexture] = useState(null);
+
   useEffect(() => {
-    if (texture) {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      // 开启各向异性过滤和抗锯齿，大幅提升图片在 3D 渲染中的清晰度
-      texture.anisotropy = 16;
-      texture.minFilter = THREE.LinearMipmapLinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.generateMipmaps = true;
-      texture.needsUpdate = true;
-    }
-  }, [texture]);
+    const loader = new THREE.TextureLoader();
+    loader.load(textureUrl, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 16;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.generateMipmaps = true;
+      setTexture(tex);
+    }, undefined, (err) => {
+      console.warn("Failed to load texture:", textureUrl, err);
+      // Fallback
+    });
+  }, [textureUrl]);
   
   const sizeMm = parseFloat(bead.size || 10);
   const r = (sizeMm * 0.1) / 2;
@@ -85,11 +90,13 @@ const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentD
             renderOrder={renderOrder}
           >
             <sphereGeometry args={[r, 32, 32]} />
-            <meshMatcapMaterial 
-              matcap={texture} 
-              color="#ffffff" 
-              depthTest={!isDragged}
-            />
+            {texture && (
+              <meshMatcapMaterial 
+                matcap={texture} 
+                color="#ffffff" 
+                depthTest={!isDragged}
+              />
+            )}
           </mesh>
         ) : (
           <mesh 
@@ -101,16 +108,18 @@ const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentD
             position={isPendant ? [0, -r * 1.0, 0] : [0, 0, 0]}
           >
             <planeGeometry args={[r * 2.2, r * 2.2]} />
-            <meshStandardMaterial 
-              map={texture} 
-              transparent={true} 
-              alphaTest={0.05}
-              side={THREE.DoubleSide} 
-              depthWrite={!isDragged}
-              roughness={0.2}
-              metalness={0.4}
-              envMapIntensity={1.5}
-            />
+            {texture && (
+              <meshStandardMaterial 
+                map={texture} 
+                transparent={true} 
+                alphaTest={0.05}
+                side={THREE.DoubleSide} 
+                depthWrite={!isDragged}
+                roughness={0.2}
+                metalness={0.4}
+                envMapIntensity={1.5}
+              />
+            )}
           </mesh>
         )}
       </group>
@@ -431,7 +440,7 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
           onPointerCancel={handleBgPointerUp}
         >
           <planeGeometry args={[100, 100]} />
-          <meshBasicMaterial visible={false} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       )}
 
