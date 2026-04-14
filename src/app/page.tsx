@@ -171,6 +171,30 @@ export default function Home() {
     { id: 'string_blue', name: 'Blue String', color: '#2563eb', price: 1.00 },
   ];
 
+  const handleCustomSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 允许输入为空（方便用户删除并重新输入）
+    if (e.target.value === '') {
+      setTargetLengthCm('');
+      return;
+    }
+    
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value)) {
+      setTargetLengthCm(value);
+    }
+  };
+
+  const handleCustomSizeBlur = () => {
+    let value = parseFloat(targetLengthCm);
+    // 当失去焦点时进行约束验证：10cm ~ 25cm
+    if (isNaN(value) || value < 10) {
+      value = 10;
+    } else if (value > 25) {
+      value = 25;
+    }
+    setTargetLengthCm(value);
+  };
+
   // 提取控制面板组件以避免代码重复
   const ControlPanel = () => (
     <>
@@ -244,6 +268,23 @@ export default function Home() {
               </button>
             );
           })}
+        </div>
+
+        {/* 自定义尺寸输入框 */}
+        <div className="mt-3 flex items-center justify-between p-2 rounded-xl border border-gray-200 bg-white focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100 transition-all">
+          <span className="text-xs font-medium text-gray-500 pl-2">Custom (cm)</span>
+          <div className="flex items-center">
+              <input 
+                type="number" 
+                min="10" 
+                max="25" 
+                step="0.5"
+                value={targetLengthCm}
+                onChange={handleCustomSizeChange}
+                onBlur={handleCustomSizeBlur}
+                className="w-16 text-right font-bold text-gray-800 bg-transparent border-none outline-none appearance-none"
+              />
+          </div>
         </div>
       </div>
 
