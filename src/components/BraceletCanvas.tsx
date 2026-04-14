@@ -115,9 +115,11 @@ const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentD
                 alphaTest={0.05}
                 side={THREE.DoubleSide} 
                 depthWrite={!isDragged}
-                roughness={0.2}
-                metalness={0.4}
-                envMapIntensity={1.5}
+                roughness={0.4}
+                metalness={0.1}
+                emissive={new THREE.Color(0xffffff)}
+                emissiveMap={texture}
+                emissiveIntensity={0.2}
               />
             )}
           </mesh>
@@ -407,19 +409,19 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
       />
       
       {/* 珠宝展示灯光系统 */}
-      <ambientLight intensity={0.6} color="#ffffff" />
-      <directionalLight position={[5, 10, 5]} intensity={0.8} color="#fffaf0" />
+      <ambientLight intensity={0.8} color="#ffffff" />
+      <directionalLight position={[5, 10, 5]} intensity={1.2} color="#fffaf0" />
+      <directionalLight position={[-5, -10, -5]} intensity={0.5} color="#ffffff" />
       <SpotLight 
         position={[-5, 5, 10]} 
         angle={0.3} 
         penumbra={0.8} 
-        intensity={1.2} 
+        intensity={1.5} 
         color="#ffffff"
         castShadow 
       />
       
-      {/* 环境光反射，让珠子和配件更有质感 */}
-      <Environment preset="city" />
+      {/* 移除了 Environment 组件，因为它会从 GitHub 下载 HDR 文件，导致国内网络下 Canvas 一直处于挂起状态无法显示 */}
 
       {/* 底部增加接触阴影，让整个手串显得更立体、更高级 */}
       <ContactShadows 
