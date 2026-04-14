@@ -186,8 +186,18 @@ const BaguaImage = ({ radius, isDragging }) => {
   }, []);
 
   const { opacity } = useSpring({
-    opacity: isDragging ? 0.45 : 0, // 拖拽时清晰，平时完全透明不显示
-    config: { tension: 150, friction: 20 }
+    to: async (next) => {
+      if (isDragging) {
+        // 当开始拖拽时，实现多阶段渐变亮起
+        await next({ opacity: 0.4, config: { duration: 150 } });
+        await next({ opacity: 0.7, config: { duration: 150 } });
+        await next({ opacity: 1.0, config: { duration: 200 } });
+      } else {
+        // 松开时，平滑变回全透明
+        await next({ opacity: 0, config: { tension: 120, friction: 25 } });
+      }
+    },
+    from: { opacity: 0 }
   });
 
   if (!texture) return null;
