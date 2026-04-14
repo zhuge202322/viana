@@ -69,12 +69,12 @@ export default function Sidebar({ products, onAddBead, onClear, onCompleteDesign
       {/* 商品网格 */}
       <div className="flex-1 overflow-y-auto p-2 sm:p-4">
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-3 2xl:grid-cols-4 gap-2 sm:gap-3">
-          {displayedProducts.map(p => {
+          {displayedProducts.map((p, index) => {
             const filename = p.image ? p.image.split('/').pop() : '';
             const localImageUrl = filename ? `/images/beads/${filename}` : '';
             return (
             <div
-              key={p.id}
+              key={`${p.id}-${index}`}
               onClick={() => onAddBead(p)}
               className="flex flex-col items-center p-2 bg-white border border-gray-100 rounded-lg cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all group"
             >
