@@ -408,29 +408,14 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
         // 如果没有配饰，用户可以自由翻转；如果有配饰，则锁定摄像机，通过下方的平面进行 2D 转盘旋转
       />
       
-      {/* 珠宝展示灯光系统 */}
-      <ambientLight intensity={0.8} color="#ffffff" />
-      <directionalLight position={[5, 10, 5]} intensity={1.2} color="#fffaf0" />
-      <directionalLight position={[-5, -10, -5]} intensity={0.5} color="#ffffff" />
-      <SpotLight 
-        position={[-5, 5, 10]} 
-        angle={0.3} 
-        penumbra={0.8} 
-        intensity={1.5} 
-        color="#ffffff"
-        castShadow 
-      />
+      {/* 珠宝展示灯光系统：使用无方向性的全局光照和柔和的面光，避免旋转时的死角阴影 */}
+      <ambientLight intensity={1.2} color="#ffffff" />
+      <directionalLight position={[0, 0, 10]} intensity={0.8} color="#ffffff" />
+      <directionalLight position={[0, 0, -10]} intensity={0.8} color="#ffffff" />
+      <directionalLight position={[10, 0, 0]} intensity={0.5} color="#ffffff" />
+      <directionalLight position={[-10, 0, 0]} intensity={0.5} color="#ffffff" />
       
-      {/* 移除了 Environment 组件，因为它会从 GitHub 下载 HDR 文件，导致国内网络下 Canvas 一直处于挂起状态无法显示 */}
-
-      {/* 底部增加接触阴影，让整个手串显得更立体、更高级 */}
-      <ContactShadows 
-        position={[0, 0, -1]} 
-        opacity={0.4} 
-        scale={20} 
-        blur={2} 
-        far={10} 
-      />
+      {/* 移除了 Spotlight 和 ContactShadows，避免在 360 度旋转和缩放时产生探照灯穿帮和不合理的地面投影 */}
 
       {/* 隐藏的背景板：用于在锁定 3D 旋转时，捕获鼠标拖拽来实现 2D 转盘旋转 */}
       {hasAccessories && (
