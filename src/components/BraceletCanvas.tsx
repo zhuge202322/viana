@@ -186,7 +186,7 @@ const BaguaImage = ({ radius, isDragging }) => {
   }, []);
 
   const { opacity } = useSpring({
-    opacity: isDragging ? 0.35 : 0.08, // 拖拽时稍微清晰，平时若隐若现
+    opacity: isDragging ? 0.45 : 0, // 拖拽时清晰，平时完全透明不显示
     config: { tension: 150, friction: 20 }
   });
 
