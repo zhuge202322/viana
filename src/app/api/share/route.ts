@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+// 模拟内存数据库，在 Vercel Serverless 环境下可以保持短期的状态
+// 注意：每次 Vercel 实例重启（休眠后唤醒或重新部署）后，这个内存数据都会清空。
+// 如果需要永久保存，必须使用真实的数据库（如 MongoDB, Supabase, Vercel Postgres）和对象存储（如 Vercel Blob, AWS S3）。
+let mockGalleryData: any[] = [];
 
 export async function POST(request: Request) {
   try {
@@ -11,51 +13,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
-    // Validate base64 image (only allow PNG/JPEG)
-    const match = imageBase64.match(/^data:image\/(png|jpeg);base64,(.+)$/);
-    if (!match) {
-      return NextResponse.json({ error: 'Invalid image format. Only PNG and JPEG are allowed.' }, { status: 400 });
-    }
-
-    const extension = match[1];
-    const base64Data = match[2];
-    
     // Check size (limit to ~5MB)
-    if (base64Data.length > 5 * 1024 * 1024) {
+    if (imageBase64.length > 5 * 1024 * 1024) {
       return NextResponse.json({ error: 'Image too large (max 5MB)' }, { status: 400 });
     }
 
-    const buffer = Buffer.from(base64Data, 'base64');
     const id = Date.now().toString() + Math.random().toString(36).substring(2, 8);
-    const filename = `${id}.${extension}`;
-    
-    const galleryDir = path.join(process.cwd(), 'public', 'gallery', 'images');
-    if (!fs.existsSync(galleryDir)) {
-      fs.mkdirSync(galleryDir, { recursive: true });
-    }
-    
-    fs.writeFileSync(path.join(galleryDir, filename), buffer);
 
-    const dataFile = path.join(process.cwd(), 'public', 'gallery', 'data.json');
-    let galleryData = [];
-    if (fs.existsSync(dataFile)) {
-      const content = fs.readFileSync(dataFile, 'utf-8');
-      try {
-        galleryData = JSON.parse(content);
-      } catch (e) {}
-    }
-
+    // 在 Vercel 环境中，我们直接把 Base64 字符串作为图片 URL 存入内存数组中，
+    // 这样前端就可以直接渲染这张 Base64 图片，而不需要真正写入磁盘。
     const newEntry = {
       id,
-      imageUrl: `/gallery/images/${filename}`,
+      imageUrl: imageBase64,
       items,
       targetLength,
       price,
       createdAt: new Date().toISOString()
     };
 
-    galleryData.unshift(newEntry); // Add to top
-    fs.writeFileSync(dataFile, JSON.stringify(galleryData, null, 2));
+    mockGalleryData.unshift(newEntry); // Add to top
 
     return NextResponse.json({ success: true, data: newEntry });
   } catch (error) {
@@ -66,12 +42,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const dataFile = path.join(process.cwd(), 'public', 'gallery', 'data.json');
-    if (!fs.existsSync(dataFile)) {
-      return NextResponse.json([]);
-    }
-    const content = fs.readFileSync(dataFile, 'utf-8');
-    return NextResponse.json(JSON.parse(content));
+    return NextResponse.json(mockGalleryData);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch gallery' }, { status: 500 });
   }
