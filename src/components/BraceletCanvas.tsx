@@ -215,6 +215,28 @@ const BaguaImage = ({ radius, isDragging }) => {
   );
 };
 
+// 辅助组件：真实质感的 3D 手绳
+const RealisticString = ({ curvePoints, color }) => {
+  const curve = useMemo(() => {
+    if (curvePoints.length === 0) return null;
+    return new THREE.CatmullRomCurve3(curvePoints, true);
+  }, [curvePoints]);
+
+  if (!curve) return null;
+
+  return (
+    <mesh position={[0, 0, -0.1]}>
+      {/* tubularSegments: 128 (平滑的圆环), radius: 0.04 (绳子粗细), radialSegments: 16 */}
+      <tubeGeometry args={[curve, 128, 0.04, 16, true]} />
+      <meshStandardMaterial 
+        color={color} 
+        roughness={0.7} // 绳子通常比较粗糙
+        metalness={0.1} // 轻微反光
+      />
+    </mesh>
+  );
+};
+
 export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, resetCamTrigger, stringColor = "#333333" }) {
   const [localBeads, setLocalBeads] = useState(beads);
   const draggedIndexRef = useRef(null);
@@ -486,11 +508,9 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
         )}
         
         {ringData.curvePoints.length > 0 && (
-          <Line 
-            points={ringData.curvePoints}
-            color={stringColor}
-            lineWidth={2}
-            position={[0, 0, -0.1]} // 将线圈稍微往后退一点，确保被配饰遮挡
+          <RealisticString 
+            curvePoints={ringData.curvePoints} 
+            color={stringColor} 
           />
         )}
 
