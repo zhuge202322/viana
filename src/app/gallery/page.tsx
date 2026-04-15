@@ -7,6 +7,7 @@ export default function GalleryPage() {
   const [gallery, setGallery] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     fetch('/api/share')
@@ -64,10 +65,23 @@ export default function GalleryPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setSelectedItem(null)}>
           <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh] animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
             {/* Image Side */}
-            <div className="md:w-1/2 bg-gray-50 p-8 flex items-center justify-center relative border-b md:border-b-0 md:border-r border-gray-100 min-h-[300px]">
-              <img src={selectedItem.imageUrl} alt="Bracelet" className="w-full h-auto max-h-full object-contain drop-shadow-xl" />
+            <div 
+              className="md:w-1/2 bg-gray-50 p-8 flex items-center justify-center relative border-b md:border-b-0 md:border-r border-gray-100 min-h-[300px] cursor-zoom-in group"
+              onClick={() => setIsFullScreen(true)}
+            >
+              <img 
+                src={selectedItem.imageUrl} 
+                alt="Bracelet" 
+                className="w-full h-auto max-h-full object-contain drop-shadow-xl transition-transform duration-300 group-hover:scale-110" 
+              />
               <div className="absolute top-4 left-4 bg-white/80 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-gray-700 shadow-sm border border-gray-200">
                 Shared Design
+              </div>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <div className="bg-white/90 backdrop-blur-sm text-gray-800 px-4 py-2 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                  Click to Enlarge
+                </div>
               </div>
             </div>
             
@@ -109,6 +123,37 @@ export default function GalleryPage() {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-screen Image Viewer */}
+      {isFullScreen && selectedItem && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-white/95 backdrop-blur-md cursor-zoom-out animate-in fade-in duration-200"
+          onClick={() => setIsFullScreen(false)}
+        >
+          <button 
+            className="absolute top-6 right-6 p-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full transition-colors z-10 shadow-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsFullScreen(false);
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+          
+          <div className="w-full h-full p-4 md:p-12 flex items-center justify-center animate-in zoom-in-95 duration-300">
+            <img 
+              src={selectedItem.imageUrl} 
+              alt="Bracelet Fullscreen" 
+              className="max-w-full max-h-full object-contain drop-shadow-2xl select-none"
+              onClick={(e) => e.stopPropagation()} // 阻止点击图片本身关闭
+            />
+          </div>
+          
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-white/80 backdrop-blur-md rounded-full shadow-lg border border-gray-100 text-sm font-bold text-gray-800 pointer-events-none">
+            Click anywhere to close
           </div>
         </div>
       )}
