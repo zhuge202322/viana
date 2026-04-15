@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import html2canvas from 'html2canvas';
 
 // 动态引入 3D 画布组件，避免 SSR 报错
@@ -20,6 +21,7 @@ export default function Home() {
   const [showPreviewModal, setShowPreviewModal] = useState(false); // 控制预览弹窗
   const [previewImageUrl, setPreviewImageUrl] = useState(""); // 保存的 3D 截图
   const [mobileTab, setMobileTab] = useState('settings'); // 移动端选项卡默认：'settings'
+  const [isSharing, setIsSharing] = useState(false); // 控制分享到广场的状态
 
   useEffect(() => {
     // 从 public 目录加载我们爬取到的 JSON 数据
@@ -140,6 +142,49 @@ export default function Home() {
         alert("Failed to save image. Please try again.");
       }
     }, 100);
+  };
+
+  const handleShareToGallery = async () => {
+    if (selectedBeads.length === 0) {
+      alert('Please add some beads to your bracelet first!');
+      return;
+    }
+    
+    setIsSharing(true);
+    try {
+      // 触发重置相机以获得完美居中的正视图
+      setResetCamTrigger(prev => prev + 1);
+      
+      // 等待相机重置动画完成和重新渲染
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const canvas = document.querySelector('canvas');
+      if (!canvas) throw new Error('Canvas not found');
+      
+      // 直接获取 3D 画布的无背景清晰截图
+      const imageBase64 = canvas.toDataURL('image/png');
+      const items = getBOMList();
+      
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64,
+          items,
+          targetLength: targetLengthCm,
+          price: stats.price
+        })
+      });
+      
+      if (!res.ok) throw new Error('Failed to share to gallery');
+      
+      alert('Successfully shared to the DIY Gallery!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to share. Please try again.');
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const femaleSizes = [
@@ -316,13 +361,30 @@ export default function Home() {
           Hint: Drag to rotate 360°, scroll to zoom
         </p>
         
-        {/* 联系客服按钮 */}
-        <button 
-          onClick={() => window.open('https://wa.me/', '_blank')}
-          className="w-full mt-3 xl:mt-4 py-2.5 xl:py-3 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl shadow-[0_4px_15px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2"
-        >
-          Contact Support
-        </button>
+        {/* 操作按钮区 */}
+        <div className="mt-3 xl:mt-4 grid grid-cols-2 gap-2">
+          <button 
+            onClick={handleShareToGallery}
+            disabled={isSharing}
+            className="col-span-2 py-2.5 xl:py-3 bg-[#751113] hover:bg-[#5a0c0e] text-white text-sm font-bold rounded-xl shadow-[0_4px_15px_rgba(117,17,19,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSharing ? 'Sharing...' : 'Share to Gallery'}
+          </button>
+          
+          <button 
+            onClick={() => window.open('https://wa.me/', '_blank')}
+            className="py-2 xl:py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs xl:text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center"
+          >
+            Contact
+          </button>
+
+          <Link 
+            href="/gallery"
+            className="py-2 xl:py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs xl:text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center"
+          >
+            Explore Gallery
+          </Link>
+        </div>
       </div>
     </>
   );
