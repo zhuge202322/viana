@@ -22,6 +22,15 @@ export default function Home() {
   const [previewImageUrl, setPreviewImageUrl] = useState(""); // 保存的 3D 截图
   const [mobileTab, setMobileTab] = useState('settings'); // 移动端选项卡默认：'settings'
   const [isSharing, setIsSharing] = useState(false); // 控制分享到广场的状态
+  const [toastMessage, setToastMessage] = useState(""); // 控制网页内联提示框的文本
+  const [showToast, setShowToast] = useState(false);
+
+  // 显示提示信息的帮助函数
+  const showNotification = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   useEffect(() => {
     // 从 public 目录加载我们爬取到的 JSON 数据
@@ -60,7 +69,7 @@ export default function Home() {
 
     // 只有当添加后的长度超过了 (目标长度 + 0.5cm 冗余) 时，才阻止添加
     if (newTotalLengthMm > maxAllowedLengthMm) {
-      alert(`The target wrist size is ${targetLengthCm}cm, with a maximum allowance of ${(maxAllowedLengthMm / 10).toFixed(1)}cm.\nAdding this bead will exceed the maximum length!`);
+      showNotification(`The target wrist size is ${targetLengthCm}cm, with a maximum allowance of ${(maxAllowedLengthMm / 10).toFixed(1)}cm. Adding this bead will exceed the maximum length!`);
       return;
     }
 
@@ -146,7 +155,7 @@ export default function Home() {
 
   const handleShareToGallery = async () => {
     if (selectedBeads.length === 0) {
-      alert('Please add some beads to your bracelet first!');
+      showNotification('Please add some beads to your bracelet first!');
       return;
     }
     
@@ -178,10 +187,10 @@ export default function Home() {
       
       if (!res.ok) throw new Error('Failed to share to gallery');
       
-      alert('Successfully shared to the DIY Gallery!');
+      showNotification('🎉 Successfully shared to the DIY Gallery!');
     } catch (err) {
       console.error(err);
-      alert('Failed to share. Please try again.');
+      showNotification('Failed to share. Please try again.');
     } finally {
       setIsSharing(false);
     }
@@ -394,6 +403,18 @@ export default function Home() {
       
       {/* 左侧/上方 3D 画布区域 */}
       <div className="relative w-full h-[40vh] md:h-[45vh] xl:h-full xl:flex-1 shrink-0">
+        {/* 全局 Toast 提示框 */}
+        <div className={`absolute top-4 xl:top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-300 ${
+          showToast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+        }`}>
+          <div className="bg-gray-900/90 backdrop-blur-md text-white px-5 py-3 rounded-full shadow-2xl text-sm font-medium flex items-center gap-2 max-w-[90vw] text-center">
+            <span className="flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </span>
+            {toastMessage}
+          </div>
+        </div>
+
         {/* 桌面端 左侧浮动控制面板 */}
         <div className="hidden xl:block absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-md p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-[320px] max-h-[calc(100vh-32px)] overflow-y-auto custom-scrollbar border border-gray-100">
           <ControlPanel />
