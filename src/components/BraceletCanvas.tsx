@@ -38,9 +38,10 @@ const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentD
   const isRoundBead = bead.parentCategoryName === 'Beads' || bead.categoryName?.includes('Bead');
   const isPendant = bead.parentCategoryName === 'Pendants' || bead.categoryName?.includes('Pendant');
 
-  const sizeMm = parseFloat(bead.size || 10);
-  // 如果是 3mm 及以下的小吊坠，视觉上放大 1.5 倍
-  const displaySizeMm = (isPendant && sizeMm <= 3) ? sizeMm * 1.5 : sizeMm;
+  // 如果是吊坠，强制将物理尺寸和显示尺寸固定为 10mm (1cm)
+  // 这样所有的吊坠在 3D 画布上都会显示一样大，且占据固定的线圈空间
+  const sizeMm = isPendant ? 10 : parseFloat(bead.size || 10);
+  const displaySizeMm = sizeMm;
   const r = (displaySizeMm * 0.1) / 2;
 
   const groupRef = useRef();
