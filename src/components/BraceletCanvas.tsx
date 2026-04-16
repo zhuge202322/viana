@@ -308,7 +308,11 @@ export default function BraceletCanvas({ beads, onRemoveBead, onReorderBeads, re
     if (!localBeads || localBeads.length === 0) return { positions: [], rotations: [], curvePoints: [], centerAngles: [] };
 
     const scale = 0.1; // 将 mm 转换为 3D 世界的单位
-    const radii = localBeads.map(b => (parseFloat(b.size || 10) * scale) / 2);
+    const radii = localBeads.map(b => {
+      const isPendant = b.parentCategoryName === 'Pendants' || b.categoryName?.includes('Pendant');
+      const sizeMm = isPendant ? 10 : parseFloat(b.size || 10);
+      return (sizeMm * scale) / 2;
+    });
     
     let R = 2.54; 
     let totalAngle = 0;
