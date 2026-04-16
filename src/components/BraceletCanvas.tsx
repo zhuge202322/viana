@@ -226,8 +226,8 @@ const RealisticString = ({ curvePoints, color }) => {
 
   return (
     <mesh position={[0, 0, 0]}>
-      {/* tubularSegments: 128 (平滑的圆环), radius: 0.04 (绳子粗细), radialSegments: 16 */}
-      <tubeGeometry args={[curve, 128, 0.04, 16, true]} />
+      {/* tubularSegments: 128 (平滑的圆环), radius: 0.028 (比之前细30%, 适配1mm配饰), radialSegments: 16 */}
+      <tubeGeometry args={[curve, 128, 0.028, 16, true]} />
       <meshStandardMaterial 
         color={color} 
         roughness={0.7} // 绳子通常比较粗糙
