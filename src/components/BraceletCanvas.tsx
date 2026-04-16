@@ -105,7 +105,7 @@ const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentD
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
             renderOrder={renderOrder}
-            position={isPendant ? [0, -r * 1.0, 0] : [0, 0, 0]}
+            position={isPendant ? [0, -r * 1.0, 0.06] : [0, 0, 0.06]}
           >
             <planeGeometry args={[r * 2.2, r * 2.2]} />
             {texture && (
@@ -225,7 +225,7 @@ const RealisticString = ({ curvePoints, color }) => {
   if (!curve) return null;
 
   return (
-    <mesh position={[0, 0, -0.1]}>
+    <mesh position={[0, 0, 0]}>
       {/* tubularSegments: 128 (平滑的圆环), radius: 0.04 (绳子粗细), radialSegments: 16 */}
       <tubeGeometry args={[curve, 128, 0.04, 16, true]} />
       <meshStandardMaterial 
