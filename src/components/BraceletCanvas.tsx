@@ -105,7 +105,9 @@ const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentD
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
             renderOrder={renderOrder}
-            position={isPendant ? [0, -r * 1.0, 0.06] : [0, 0, 0.06]}
+            // 配饰 (Accessories) 放在中心 [0, 0, 0.06]
+            // 吊坠 (Pendants) 需要往下偏移，使其顶部的挂环穿过手绳，大约偏移 -r*0.9
+            position={isPendant ? [0, -r * 0.9, 0.06] : [0, 0, 0.06]}
           >
             <planeGeometry args={[r * 2.2, r * 2.2]} />
             {texture && (
