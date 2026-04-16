@@ -34,12 +34,14 @@ const BeadPlane = ({ bead, position, rotation, dialRotation, isDragged, currentD
     });
   }, [textureUrl]);
   
-  const sizeMm = parseFloat(bead.size || 10);
-  const r = (sizeMm * 0.1) / 2;
-  
   // 核心判断
   const isRoundBead = bead.parentCategoryName === 'Beads' || bead.categoryName?.includes('Bead');
   const isPendant = bead.parentCategoryName === 'Pendants' || bead.categoryName?.includes('Pendant');
+
+  const sizeMm = parseFloat(bead.size || 10);
+  // 如果是 3mm 及以下的小吊坠，视觉上放大 1.5 倍
+  const displaySizeMm = (isPendant && sizeMm <= 3) ? sizeMm * 1.5 : sizeMm;
+  const r = (displaySizeMm * 0.1) / 2;
 
   const groupRef = useRef();
 
