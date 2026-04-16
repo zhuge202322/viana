@@ -139,8 +139,8 @@ const ResetCamera = ({ trigger, controlsRef, setDialRotation }) => {
   const { camera } = useThree();
   useEffect(() => {
     if (trigger > 0) {
-      // 修改相机距离，拉近到 z=8，避免手串超出截图区域
-      camera.position.set(0, 0, 8);
+      // 修改相机距离，拉远到 z=12，确保加上配饰和吊坠后手串也不会超出截图区域
+      camera.position.set(0, 0, 12);
       camera.lookAt(0, 0, 0);
       // 修改视野角度
       camera.fov = 45;
