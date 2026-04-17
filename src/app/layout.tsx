@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +28,32 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col pt-16">
+        {/* 全局顶部导航栏 */}
+        <nav className="fixed top-0 left-0 w-full h-16 bg-white border-b border-gray-100 z-[200] flex items-center justify-between px-4 md:px-8 shadow-sm">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-8 h-8 bg-[#751113] rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-105 transition-transform shadow-md">
+              V
+            </div>
+            <span className="text-xl font-bold text-gray-900 tracking-tight">Viana Jewelry</span>
+          </Link>
+          
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/" className="text-sm font-bold text-gray-600 hover:text-[#751113] transition-colors uppercase tracking-wider">DIY Bracelet</Link>
+            <Link href="/gallery" className="text-sm font-bold text-gray-600 hover:text-[#751113] transition-colors uppercase tracking-wider">Collection</Link>
+            <Link href="#" className="text-sm font-bold text-gray-600 hover:text-[#751113] transition-colors uppercase tracking-wider">About Us</Link>
+            <Link href="#" className="text-sm font-bold text-gray-600 hover:text-[#751113] transition-colors uppercase tracking-wider">Service</Link>
+            <Link href="#" className="text-sm font-bold text-gray-600 hover:text-[#751113] transition-colors uppercase tracking-wider">Contact</Link>
+          </div>
+
+          {/* 移动端菜单按钮 (视觉占位) */}
+          <button className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+        </nav>
+        
+        {children}
+      </body>
     </html>
   );
 }
